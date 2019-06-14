@@ -18,6 +18,15 @@ type DockerContainer struct {
 	image       DockerImage
 }
 
+func getWatchedComposeFiles() map[string][]DockerContainer {
+	files := make(map[string][]DockerContainer)
+	containers := getWatchedRunningContainers()
+	for _, container := range containers {
+		files[container.composeFile] = append(files[container.composeFile], container)
+	}
+	return files
+}
+
 func getWatchedRunningContainers() []DockerContainer {
 	containers := []DockerContainer{}
 	containerIDs := getWatchedRunningContainerIDs()
@@ -62,7 +71,7 @@ func getImageDetails(id string) DockerImage {
 }
 
 func getImageHash(id string) string {
-	out, err := exec.Command("docker", "inspect", "--format", "{{.Id}}", id).Output()
+	out, err := exec.Command("docker", "inspect", "--type", "image", "--format", "{{.Id}}", id).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,7 +79,7 @@ func getImageHash(id string) string {
 }
 
 func getRunningContainerImageHash(id string) string {
-	out, err := exec.Command("docker", "inspect", "--format", "{{.Image}}", id).Output()
+	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{.Image}}", id).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,7 +87,7 @@ func getRunningContainerImageHash(id string) string {
 }
 
 func getRunningContainerImageID(id string) string {
-	out, err := exec.Command("docker", "inspect", "--format", "{{.Config.Image}}", id).Output()
+	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{.Config.Image}}", id).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -86,7 +95,7 @@ func getRunningContainerImageID(id string) string {
 }
 
 func getRunningContainerImageName(id string) string {
-	out, err := exec.Command("docker", "inspect", "--format", "{{.Name}}", id).Output()
+	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{.Name}}", id).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,13 +103,13 @@ func getRunningContainerImageName(id string) string {
 }
 
 func getRunningContainerComposeFile(id string) string {
-	out, err := exec.Command("docker", "inspect", "--format", "{{index .Config.Labels \"docker-compose-watcher.file\"}}", id).Output()
+	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{index .Config.Labels \"docker-compose-watcher.file\"}}", id).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fileName := strings.TrimSpace(string(out))
 	if fileName == "" {
-		out, err = exec.Command("docker", "inspect", "--format", "{{index .Config.Labels \"docker-compose-watcher.dir\"}}", id).Output()
+		out, err = exec.Command("docker", "inspect", "--type", "container", "--format", "{{index .Config.Labels \"docker-compose-watcher.dir\"}}", id).Output()
 		if err != nil {
 			log.Fatal(err)
 		}
