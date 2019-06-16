@@ -4,9 +4,14 @@ services:
     image: watcher-test-1
     labels:
       - "docker-compose-watcher.watch=1"
-      - "docker-compose-watcher.dir=${PWD}"
+      - "docker-compose-watcher.file=${PWD}/compose1.yaml"
   test2:
     image: watcher-test-2
     labels:
       - "docker-compose-watcher.watch=1"
-      - "docker-compose-watcher.dir=${PWD}"
+      - "docker-compose-watcher.file=${PWD}/compose1.yaml"
+  test3:
+    image: nginx:alpine
+    labels:
+      - "docker-compose-watcher.watch=1"
+      - "docker-compose-watcher.file=${PWD}/compose1.yaml"

@@ -6,11 +6,13 @@ import (
 	"strings"
 )
 
+// DockerImage is a docker image
 type DockerImage struct {
 	id   string
 	hash string
 }
 
+// DockerContainer is a docker container
 type DockerContainer struct {
 	id          string
 	name        string
@@ -120,4 +122,28 @@ func getRunningContainerComposeFile(id string) string {
 		fileName += "docker-compose.yml"
 	}
 	return fileName
+}
+
+func pullImage(name string) bool {
+	err := exec.Command("docker", "pull", name).Run()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func downDockerCompose(composeFile string) bool {
+	err := exec.Command("docker-compose", "-f", composeFile, "--remove-orphans", "down").Run()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func upDockerCompose(composeFile string) bool {
+	err := exec.Command("docker-compose", "-f", composeFile, "up", "-d").Run()
+	if err != nil {
+		return false
+	}
+	return true
 }
