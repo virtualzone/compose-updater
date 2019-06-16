@@ -24,4 +24,4 @@ RUN curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-c
 
 COPY --from=builder /go/bin/app /usr/local/bin/docker-compose-watcher
 
-CMD ["docker-compose-watcher", "-once=0 -printSettings -cleanup"]
+CMD ["docker-compose-watcher", "-once=0", "-printSettings", "-cleanup"]
