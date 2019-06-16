@@ -20,8 +20,14 @@ type DockerContainer struct {
 	image       DockerImage
 }
 
-func getWatchedComposeFiles() map[string][]DockerContainer {
-	files := make(map[string][]DockerContainer)
+// ComposeMap is a key-value map of compose file path (string) and a list of docker containers
+type ComposeMap map[string]DockerContainerList
+
+// DockerContainerList is a list of docker containers
+type DockerContainerList []DockerContainer
+
+func getWatchedComposeFiles() ComposeMap {
+	files := make(map[string]DockerContainerList)
 	containers := getWatchedRunningContainers()
 	for _, container := range containers {
 		files[container.composeFile] = append(files[container.composeFile], container)
@@ -142,6 +148,14 @@ func downDockerCompose(composeFile string) bool {
 
 func upDockerCompose(composeFile string) bool {
 	err := exec.Command("docker-compose", "-f", composeFile, "up", "-d").Run()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func cleanUp() bool {
+	err := exec.Command("docker", "system", "prune", "-a", "-f").Run()
 	if err != nil {
 		return false
 	}
