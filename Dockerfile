@@ -23,6 +23,5 @@ RUN apk --no-cache add \
 RUN curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
 
 COPY --from=builder /go/bin/app /usr/local/bin/docker-compose-watcher
-RUN docker-compose-watcher -help
 
 CMD ["app", "-once=0 -printSettings -cleanup"]
