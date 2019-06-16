@@ -4,6 +4,8 @@ import (
 	"log"
 	"os/exec"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 // DockerImage is a docker image
@@ -14,10 +16,22 @@ type DockerImage struct {
 
 // DockerContainer is a docker container
 type DockerContainer struct {
-	id          string
-	name        string
-	composeFile string
-	image       DockerImage
+	id                 string
+	name               string
+	composeServiceName string
+	composeFile        string
+	image              DockerImage
+}
+
+// ComposeYamlService is a service in a compose YAML file
+type ComposeYamlService struct {
+	Image string
+	Build map[string]string
+}
+
+// ComposeYaml is a compose YAML file
+type ComposeYaml struct {
+	Services map[string]ComposeYamlService
 }
 
 // ComposeMap is a key-value map of compose file path (string) and a list of docker containers
@@ -61,9 +75,10 @@ func getWatchedRunningContainerIDs() []string {
 
 func getRunningContainerDetails(id string) DockerContainer {
 	return DockerContainer{
-		id:          id,
-		name:        getRunningContainerImageName(id),
-		composeFile: getRunningContainerComposeFile(id),
+		id:                 id,
+		name:               getRunningContainerImageName(id),
+		composeServiceName: getRunningContainerComposeServiceName(id),
+		composeFile:        getRunningContainerComposeFile(id),
 		image: DockerImage{
 			id:   getRunningContainerImageID(id),
 			hash: getRunningContainerImageHash(id),
@@ -110,6 +125,14 @@ func getRunningContainerImageName(id string) string {
 	return strings.TrimSpace(string(out))
 }
 
+func getRunningContainerComposeServiceName(id string) string {
+	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{index .Config.Labels \"com.docker.compose.service\"}}", id).Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return strings.TrimSpace(string(out))
+}
+
 func getRunningContainerComposeFile(id string) string {
 	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{index .Config.Labels \"docker-compose-watcher.file\"}}", id).Output()
 	if err != nil {
@@ -130,8 +153,16 @@ func getRunningContainerComposeFile(id string) string {
 	return fileName
 }
 
-func pullImage(name string) bool {
-	err := exec.Command("docker", "pull", name).Run()
+func composePull(composeFile string, serviceName string) bool {
+	err := exec.Command("docker-compose", "-f", composeFile, "pull", serviceName).Run()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func composeBuild(composeFile string, serviceName string) bool {
+	err := exec.Command("docker-compose", "-f", composeFile, "build", "--pull", serviceName).Run()
 	if err != nil {
 		return false
 	}
@@ -160,4 +191,13 @@ func cleanUp() bool {
 		return false
 	}
 	return true
+}
+
+func parseComposeYaml(composeFile string) ComposeYaml {
+	result := ComposeYaml{}
+	data, err := exec.Command("docker-compose", "-f", composeFile, "config").Output()
+	if err == nil {
+		err = yaml.Unmarshal(data, &result)
+	}
+	return result
 }

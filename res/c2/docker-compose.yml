@@ -1,0 +1,12 @@
+version: '3'
+services:
+  test1:
+    image: watcher-test-2
+    labels:
+      - "docker-compose-watcher.watch=1"
+      - "docker-compose-watcher.dir=/Users/heiner/go/src/virtualzone.de/docker-compose-watcher/res/c2"
+  test2:
+    image: nginx:alpine
+    labels:
+      - "docker-compose-watcher.watch=1"
+      - "docker-compose-watcher.dir=/Users/heiner/go/src/virtualzone.de/docker-compose-watcher/res/c2"

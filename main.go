@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -27,14 +27,23 @@ func (composeFiles *ComposeMap) getNumContainers() int {
 }
 
 func (composeFiles *ComposeMap) updateAllContainers() {
-	for _, containers := range *composeFiles {
+	for composeFile, containers := range *composeFiles {
+		log.Printf("Processing compose file %s\n", composeFile)
+		yaml := parseComposeYaml(composeFile)
 		for _, container := range containers {
-			fmt.Printf("Pulling image %s ... ", container.image.id)
-			var res = pullImage(container.image.id)
-			if res {
-				fmt.Println("OK")
+			yamlPart := yaml.Services[container.composeServiceName]
+			var res bool
+			if len(yamlPart.Build) == 0 {
+				log.Printf("Building and pulling for service %s ... ", container.composeServiceName)
+				res = composeBuild(composeFile, container.composeServiceName)
 			} else {
-				fmt.Println("Failed")
+				log.Printf("Pulling for service %s ... ", container.composeServiceName)
+				res = composePull(composeFile, container.composeServiceName)
+			}
+			if res {
+				log.Println("OK")
+			} else {
+				log.Println("Failed")
 			}
 		}
 	}
@@ -51,12 +60,12 @@ func (containers *DockerContainerList) needsRestart() bool {
 func (composeFiles *ComposeMap) checkPerformRestart() {
 	for composeFile, containers := range *composeFiles {
 		if containers.needsRestart() {
-			fmt.Printf("Restarting %s ... ", composeFile)
+			log.Printf("Restarting %s ... ", composeFile)
 			downDockerCompose(composeFile)
 			upDockerCompose(composeFile)
-			fmt.Println("OK")
+			log.Println("OK")
 		} else {
-			fmt.Printf("Skipping %s\n", composeFile)
+			log.Printf("Skipping %s\n", composeFile)
 		}
 	}
 }
@@ -89,42 +98,42 @@ func getSettings() *Settings {
 }
 
 func (settings *Settings) print() {
-	fmt.Println("Using settings:")
-	fmt.Printf("    cleanup ......... %t\n", settings.cleanup)
-	fmt.Printf("    dry ............. %t\n", settings.dry)
-	fmt.Printf("    help ............ %t\n", settings.help)
-	fmt.Printf("    interval ........ %d\n", settings.interval)
-	fmt.Printf("    once ............ %t\n", settings.once)
-	fmt.Printf("    printSettings ... %t\n", settings.printSettings)
+	log.Println("Using settings:")
+	log.Printf("    cleanup ......... %t\n", settings.cleanup)
+	log.Printf("    dry ............. %t\n", settings.dry)
+	log.Printf("    help ............ %t\n", settings.help)
+	log.Printf("    interval ........ %d\n", settings.interval)
+	log.Printf("    once ............ %t\n", settings.once)
+	log.Printf("    printSettings ... %t\n", settings.printSettings)
 }
 
 func performUpdates(settings *Settings) {
-	fmt.Println("Building docker compose overview...")
+	log.Println("Building docker compose overview...")
 	composeFiles := getWatchedComposeFiles()
-	fmt.Printf("Found %d compose files with %d watched containers.\n", len(composeFiles), composeFiles.getNumContainers())
-	fmt.Println("Trying to update containers...")
+	log.Printf("Found %d compose files with %d watched containers.\n", len(composeFiles), composeFiles.getNumContainers())
+	log.Println("Trying to update containers...")
 	composeFiles.updateAllContainers()
-	fmt.Println("Updating docker compose overview...")
+	log.Println("Updating docker compose overview...")
 	composeFiles = getWatchedComposeFiles()
 	if !(*settings).dry {
 		composeFiles.checkPerformRestart()
 	} else {
-		fmt.Println("Skipping actual restart (dry run).")
+		log.Println("Skipping actual restart (dry run).")
 	}
 	if (*settings).cleanup {
 		if !(*settings).dry {
 			cleanUp()
 		} else {
-			fmt.Println("Skipping clean-up (dry run).")
+			log.Println("Skipping clean-up (dry run).")
 		}
 	}
-	fmt.Println("Done.")
+	log.Println("Done.")
 }
 
 func printHeader() {
-	fmt.Printf("Docker Compose Watcher %s\n", BuildVersion)
-	fmt.Println("https://github.com/virtualzone/docker-compose-watcher")
-	fmt.Println("=====================================================")
+	log.Printf("Docker Compose Watcher %s\n", BuildVersion)
+	log.Println("https://github.com/virtualzone/docker-compose-watcher")
+	log.Println("=====================================================")
 }
 
 func mainLoop(settings *Settings) {
@@ -133,7 +142,7 @@ func mainLoop(settings *Settings) {
 		if (*settings).once {
 			return
 		}
-		fmt.Printf("Waiting %d minutes until next execution...\n", (*settings).interval)
+		log.Printf("Waiting %d minutes until next execution...\n", (*settings).interval)
 		time.Sleep(time.Duration((*settings).interval) * time.Minute)
 	}
 }
