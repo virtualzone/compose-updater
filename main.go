@@ -108,9 +108,15 @@ func performUpdates(settings *Settings) {
 	composeFiles = getWatchedComposeFiles()
 	if !(*settings).dry {
 		composeFiles.checkPerformRestart()
+	} else {
+		fmt.Println("Skipping actual restart (dry run).")
 	}
-	if (*settings).cleanup && !(*settings).dry {
-		cleanUp()
+	if (*settings).cleanup {
+		if !(*settings).dry {
+			cleanUp()
+		} else {
+			fmt.Println("Skipping clean-up (dry run).")
+		}
 	}
 	fmt.Println("Done.")
 }
