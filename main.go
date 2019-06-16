@@ -33,7 +33,7 @@ func (composeFiles *ComposeMap) updateAllContainers() {
 		for _, container := range containers {
 			yamlPart := yaml.Services[container.composeServiceName]
 			var res bool
-			if len(yamlPart.Build) == 0 {
+			if len(yamlPart.Build) > 0 {
 				log.Printf("Building and pulling for service %s ... ", container.composeServiceName)
 				res = composeBuild(composeFile, container.composeServiceName)
 			} else {
