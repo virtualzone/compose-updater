@@ -33,10 +33,13 @@ services:
     image: virtualzone/docker-compose-watcher
     restart: always
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/home/docker:/home/docker:ro"
     environment:
       INTERVAL: 60
 ```
+
+It's important to mount ```/var/run/docker.sock``` and the directory your compose files reside in (```/home/docker``` in the example above).
 
 Note: You'll only need one watcher instance for all your compose services (not one per docker-compose.yml).
 
