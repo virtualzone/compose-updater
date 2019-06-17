@@ -87,13 +87,6 @@ func getRunningContainerDetails(id string) DockerContainer {
 	}
 }
 
-func getImageDetails(id string) DockerImage {
-	return DockerImage{
-		id:   id,
-		hash: getImageHash(id),
-	}
-}
-
 func getImageHash(id string) string {
 	out, err := exec.Command("docker", "inspect", "--type", "image", "--format", "{{.Id}}", id).Output()
 	if err != nil {
