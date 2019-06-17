@@ -62,6 +62,7 @@ func getWatchedRunningContainerIDs() []string {
 	containerIDs := []string{}
 	out, err := exec.Command("docker", "ps", "-a", "-q", "--filter", "label=docker-compose-watcher.watch=1").Output()
 	if err != nil {
+		log.Println("Failed in getWatchedRunningContainerIDs()")
 		log.Fatal(err)
 	}
 	lines := strings.Split(string(out), "\n")
@@ -96,6 +97,7 @@ func getImageDetails(id string) DockerImage {
 func getImageHash(id string) string {
 	out, err := exec.Command("docker", "inspect", "--type", "image", "--format", "{{.Id}}", id).Output()
 	if err != nil {
+		log.Println("Failed in getImageHash()")
 		log.Fatal(err)
 	}
 	return strings.TrimSpace(string(out))
@@ -104,6 +106,7 @@ func getImageHash(id string) string {
 func getRunningContainerImageHash(id string) string {
 	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{.Image}}", id).Output()
 	if err != nil {
+		log.Println("Failed in getRunningContainerImageHash()")
 		log.Fatal(err)
 	}
 	return strings.TrimSpace(string(out))
@@ -112,6 +115,7 @@ func getRunningContainerImageHash(id string) string {
 func getRunningContainerImageID(id string) string {
 	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{.Config.Image}}", id).Output()
 	if err != nil {
+		log.Println("Failed in getRunningContainerImageID()")
 		log.Fatal(err)
 	}
 	return strings.TrimSpace(string(out))
@@ -120,6 +124,7 @@ func getRunningContainerImageID(id string) string {
 func getRunningContainerImageName(id string) string {
 	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{.Name}}", id).Output()
 	if err != nil {
+		log.Println("Failed in getRunningContainerImageName()")
 		log.Fatal(err)
 	}
 	return strings.TrimSpace(string(out))
@@ -128,6 +133,7 @@ func getRunningContainerImageName(id string) string {
 func getRunningContainerComposeServiceName(id string) string {
 	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{index .Config.Labels \"com.docker.compose.service\"}}", id).Output()
 	if err != nil {
+		log.Println("Failed in getRunningContainerComposeServiceName()")
 		log.Fatal(err)
 	}
 	return strings.TrimSpace(string(out))
@@ -136,12 +142,14 @@ func getRunningContainerComposeServiceName(id string) string {
 func getRunningContainerComposeFile(id string) string {
 	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{index .Config.Labels \"docker-compose-watcher.file\"}}", id).Output()
 	if err != nil {
+		log.Println("Failed in getRunningContainerComposeFile()")
 		log.Fatal(err)
 	}
 	fileName := strings.TrimSpace(string(out))
 	if fileName == "" {
 		out, err = exec.Command("docker", "inspect", "--type", "container", "--format", "{{index .Config.Labels \"docker-compose-watcher.dir\"}}", id).Output()
 		if err != nil {
+			log.Println("Failed in getRunningContainerComposeFile()")
 			log.Fatal(err)
 		}
 		fileName = strings.TrimSpace(string(out))
