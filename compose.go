@@ -178,7 +178,7 @@ func composeBuild(composeFile string, serviceName string) bool {
 }
 
 func downDockerCompose(composeFile string) bool {
-	err := exec.Command("docker-compose", "-f", composeFile, "--remove-orphans", "down").Run()
+	err := exec.Command("docker-compose", "-f", composeFile, "down", "--remove-orphans").Run()
 	if err != nil {
 		return false
 	}
