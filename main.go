@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -16,6 +17,23 @@ type Settings struct {
 	interval      int64
 	once          bool
 	printSettings bool
+	updateLog     string
+}
+
+var (
+	UpdateLog *log.Logger
+)
+
+func initLogger(fileName string) {
+	target := ioutil.Discard
+	if fileName != "" {
+		file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatalln("Failed to open log file", err)
+		}
+		target = file
+	}
+	UpdateLog = log.New(target, "", log.Ldate|log.Ltime)
 }
 
 func (composeFiles *ComposeMap) getNumContainers() int {
@@ -52,7 +70,11 @@ func (composeFiles *ComposeMap) updateAllContainers() {
 func (containers *DockerContainerList) needsRestart() bool {
 	var needsRestart = false
 	for _, container := range *containers {
-		needsRestart = needsRestart || (container.image.hash != getImageHash(container.image.id))
+		var newImageHash = (container.image.hash != getImageHash(container.image.id))
+		if newImageHash {
+			UpdateLog.Printf("Updated service %s in %s", container.composeServiceName, container.composeFile)
+			needsRestart = true
+		}
 	}
 	return needsRestart
 }
@@ -63,6 +85,7 @@ func (composeFiles *ComposeMap) checkPerformRestart() {
 			log.Printf("Restarting %s ... ", composeFile)
 			downDockerCompose(composeFile)
 			upDockerCompose(composeFile)
+			UpdateLog.Printf("Restarted %s", composeFile)
 			log.Println("OK")
 		} else {
 			log.Printf("Skipping %s\n", composeFile)
@@ -85,6 +108,13 @@ func int64FlagEnv(p *int64, name string, env string, value int64, usage string) 
 	}
 }
 
+func stringFlagEnv(p *string, name string, env string, value string, usage string) {
+	flag.StringVar(p, name, value, usage+" (env "+env+")")
+	if os.Getenv(env) != "" {
+		*p = os.Getenv(env)
+	}
+}
+
 func getSettings() *Settings {
 	settings := new(Settings)
 	boolFlagEnv(&settings.cleanup, "cleanup", "CLEANUP", false, "run docker system prune at the end")
@@ -93,6 +123,7 @@ func getSettings() *Settings {
 	int64FlagEnv(&settings.interval, "interval", "INTERVAL", 60, "interval in minutes between runs")
 	boolFlagEnv(&settings.once, "once", "ONCE", true, "run once and exit, do not run in background")
 	boolFlagEnv(&settings.printSettings, "printSettings", "PRINT_SETTINGS", false, "print used settings")
+	stringFlagEnv(&settings.updateLog, "updateLog", "UPDATE_LOG", "", "update log file")
 	flag.Parse()
 	return settings
 }
@@ -105,6 +136,7 @@ func (settings *Settings) print() {
 	log.Printf("    interval ........ %d\n", settings.interval)
 	log.Printf("    once ............ %t\n", settings.once)
 	log.Printf("    printSettings ... %t\n", settings.printSettings)
+	log.Printf("    updateLog ....... %s\n", settings.updateLog)
 }
 
 func performUpdates(settings *Settings) {
@@ -131,9 +163,7 @@ func performUpdates(settings *Settings) {
 }
 
 func printHeader() {
-	log.Printf("Docker Compose Watcher %s\n", BuildVersion)
-	log.Println("https://github.com/virtualzone/docker-compose-watcher")
-	log.Println("=====================================================")
+	log.Printf("Compose Updater %s\n", BuildVersion)
 }
 
 func mainLoop(settings *Settings) {
@@ -157,5 +187,6 @@ func main() {
 	if (*settings).printSettings {
 		settings.print()
 	}
+	initLogger((*settings).updateLog)
 	mainLoop(settings)
 }
