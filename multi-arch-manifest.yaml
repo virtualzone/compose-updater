@@ -1,0 +1,21 @@
+image: virtualzone/compose-updater:latest
+manifests:
+  - image: virtualzone/compose-updater:amd64
+    platform:
+      architecture: amd64
+      os: linux
+  - image: virtualzone/compose-updater:arm32v6
+    platform:
+      architecture: arm
+      os: linux
+      variant: v6
+  - image: virtualzone/compose-updater:arm32v7
+    platform:
+      architecture: arm
+      os: linux
+      variant: v7
+  - image: virtualzone/compose-updater:arm64v8
+    platform:
+      architecture: arm64
+      os: linux
+      variant: v8
