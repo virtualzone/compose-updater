@@ -38,5 +38,5 @@ RUN apk --no-cache --virtual .build-deps add \
     make \
     && pip install --no-cache-dir docker-compose \
     && apk del .build-deps
-COPY --from=builder /go/bin/app /usr/local/bin/docker-compose-watcher
+COPY --from=builder /go/src/app/main /usr/local/bin/docker-compose-watcher
 CMD ["docker-compose-watcher", "-once=0", "-printSettings", "-cleanup"]
