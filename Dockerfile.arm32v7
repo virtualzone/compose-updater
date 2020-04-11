@@ -6,7 +6,7 @@ RUN apk --update add --no-cache curl
 RUN cd /tmp && \
     curl -L https://github.com/balena-io/qemu/releases/download/v3.0.0%2Bresin/qemu-3.0.0+resin-arm.tar.gz | tar zxvf - -C . && mv qemu-3.0.0+resin-arm/qemu-arm-static .
 
-FROM amd64/golang:${GO_VERSION}-alpine AS builder
+FROM arm32v7/golang:${GO_VERSION}-alpine AS builder
 COPY --from=qemu /tmp/qemu-arm-static /usr/bin/
 RUN apk --update add --no-cache git
 RUN export GOBIN=$HOME/work/bin
@@ -15,7 +15,7 @@ ADD src/ .
 RUN go get -d -v ./...
 RUN CGO_ENABLED=0 go build -o main .
 
-FROM amd64/alpine:${ALPINE_VERSION}
+FROM arm32v7/alpine:${ALPINE_VERSION}
 COPY --from=qemu /tmp/qemu-arm-static /usr/bin/
 ARG BUILD_DATE
 ARG VCS_REF
