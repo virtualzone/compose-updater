@@ -1,5 +1,5 @@
 ARG ALPINE_VERSION=3.11
-ARG GO_VERSION=1.13
+ARG GO_VERSION=1.14
 
 FROM amd64/golang:${GO_VERSION}-alpine AS builder
 RUN apk --update add --no-cache git
