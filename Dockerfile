@@ -1,5 +1,6 @@
-ARG ALPINE_VERSION=3.11
-ARG GO_VERSION=1.14
+ARG ALPINE_VERSION=3.12
+ARG GO_VERSION=1.15
+ARG COMPOSE_VERSION=1.27.4
 
 FROM amd64/golang:${GO_VERSION}-alpine AS builder
 RUN apk --update add --no-cache git
@@ -10,6 +11,7 @@ RUN go get -d -v ./...
 RUN CGO_ENABLED=0 go build -o main .
 
 FROM amd64/alpine:${ALPINE_VERSION}
+ARG COMPOSE_VERSION
 ARG BUILD_DATE
 ARG VCS_REF
 LABEL org.label-schema.build-date=$BUILD_DATE \
@@ -22,14 +24,14 @@ RUN apk --no-cache add \
     docker \
     python2
 RUN apk --no-cache --virtual .build-deps add \
-    py-pip \
-    python-dev \
+    py3-pip \
+    python3-dev \
     libffi-dev \
     openssl-dev \
     gcc \
     libc-dev \
     make \
-    && pip install --no-cache-dir docker-compose \
+    && pip3 install --no-cache-dir docker-compose==$COMPOSE_VERSION \
     && apk del .build-deps
 COPY --from=builder /go/src/app/main /usr/local/bin/docker-compose-watcher
 CMD ["docker-compose-watcher", "-once=0", "-printSettings", "-cleanup"]
