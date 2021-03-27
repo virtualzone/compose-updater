@@ -1,14 +1,16 @@
-ARG ALPINE_VERSION=3.12
-ARG GO_VERSION=1.15
-ARG COMPOSE_VERSION=1.27.4
+ARG ALPINE_VERSION=3.13
+ARG GO_VERSION=1.16
+ARG COMPOSE_VERSION=1.28.6
 
 FROM amd64/golang:${GO_VERSION}-alpine AS builder
 RUN apk --update add --no-cache git
 RUN export GOBIN=$HOME/work/bin
 WORKDIR /go/src/app
 ADD src/ .
+ADD src/go.mod .
+ADD src/go.sum .
 RUN go get -d -v ./...
-RUN CGO_ENABLED=0 go build -o main .
+RUN CGO_ENABLED=1 go build -o main .
 
 FROM amd64/alpine:${ALPINE_VERSION}
 ARG COMPOSE_VERSION
@@ -33,6 +35,9 @@ RUN apk --no-cache --virtual .build-deps add \
     gcc \
     libc-dev \
     make \
+    rust \
+    cargo \
+    && pip3 install --upgrade pip \
     && pip3 install --no-cache-dir docker-compose==$COMPOSE_VERSION \
     && apk del .build-deps
 COPY --from=builder /go/src/app/main /usr/local/bin/docker-compose-watcher
