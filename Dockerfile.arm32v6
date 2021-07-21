@@ -31,7 +31,8 @@ RUN apk --no-cache add \
     docker \
     python3 \
     py3-requests \
-    py3-distro
+    py3-distro \
+    py3-six
 RUN apk --no-cache --virtual .build-deps add \
     py3-pip \
     python3-dev \
