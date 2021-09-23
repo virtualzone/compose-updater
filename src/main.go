@@ -80,7 +80,7 @@ func (containers *DockerContainerList) needsRestart() bool {
 	return needsRestart
 }
 
-func (composeFiles *ComposeMap) checkPerformRestart() {
+func (composeFiles *ComposeMap) checkPerformRestart(settings *Settings) {
 	for composeFile, containers := range *composeFiles {
 		if containers.needsRestart() {
 			log.Printf("Restarting %s ... ", composeFile)
@@ -153,7 +153,7 @@ func performUpdates(settings *Settings) {
 	log.Println("Updating docker compose overview...")
 	composeFiles = getWatchedComposeFiles()
 	if !(*settings).dry {
-		composeFiles.checkPerformRestart()
+		composeFiles.checkPerformRestart(settings)
 	} else {
 		log.Println("Skipping actual restart (dry run).")
 	}
