@@ -18,6 +18,7 @@ type Settings struct {
 	once          bool
 	printSettings bool
 	updateLog     string
+	completeStop       bool
 }
 
 var (
@@ -83,7 +84,9 @@ func (composeFiles *ComposeMap) checkPerformRestart() {
 	for composeFile, containers := range *composeFiles {
 		if containers.needsRestart() {
 			log.Printf("Restarting %s ... ", composeFile)
-			downDockerCompose(composeFile)
+			if (*settings).completeStop {
+				downDockerCompose(composeFile)
+			}
 			upDockerCompose(composeFile)
 			UpdateLog.Printf("Restarted %s", composeFile)
 			log.Println("OK")
@@ -124,6 +127,7 @@ func getSettings() *Settings {
 	boolFlagEnv(&settings.once, "once", "ONCE", true, "run once and exit, do not run in background")
 	boolFlagEnv(&settings.printSettings, "printSettings", "PRINT_SETTINGS", false, "print used settings")
 	stringFlagEnv(&settings.updateLog, "updateLog", "UPDATE_LOG", "", "update log file")
+	boolFlagEnv(&settings.completeStop, "completeStop", "COMPLETE_STOP", false, "Restart all services in docker-compose.yml (even unmanaged)")
 	flag.Parse()
 	return settings
 }
@@ -137,6 +141,7 @@ func (settings *Settings) print() {
 	log.Printf("    once ............ %t\n", settings.once)
 	log.Printf("    printSettings ... %t\n", settings.printSettings)
 	log.Printf("    updateLog ....... %s\n", settings.updateLog)
+	log.Printf("    completeStop ....... %s\n", settings.completeStop)
 }
 
 func performUpdates(settings *Settings) {
