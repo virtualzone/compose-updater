@@ -42,6 +42,8 @@ It's important to mount ```/var/run/docker.sock``` and the directory your compos
 
 Note: You'll only need one Compose Updater instance for all your compose services (not one per docker-compose.yml).
 
+> :warning: **Do not include Compose Updater in same docker-compose.yml which should be updated**: Compose Updater is performing a combined restart with a complete stop of all services in the given docker-compose.yml. If Compose Updater is include, the first updated image will iniate a stop without a chance to perform start.
+
 ## Settings
 Configure Compose Updater via environment variables (recommended) or command line arguments:
 
