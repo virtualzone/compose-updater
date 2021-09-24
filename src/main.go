@@ -18,7 +18,7 @@ type Settings struct {
 	once          bool
 	printSettings bool
 	updateLog     string
-	completeStop       bool
+	completeStop  bool
 }
 
 var (
@@ -85,8 +85,10 @@ func (composeFiles *ComposeMap) checkPerformRestart(settings *Settings) {
 		if containers.needsRestart() {
 			log.Printf("Restarting %s ... ", composeFile)
 			if (*settings).completeStop {
+				log.Printf("Stopping %s ... ", composeFile)
 				downDockerCompose(composeFile)
 			}
+			log.Printf("Starting %s ... ", composeFile)
 			upDockerCompose(composeFile)
 			UpdateLog.Printf("Restarted %s", composeFile)
 			log.Println("OK")
@@ -140,8 +142,9 @@ func (settings *Settings) print() {
 	log.Printf("    interval ........ %d\n", settings.interval)
 	log.Printf("    once ............ %t\n", settings.once)
 	log.Printf("    printSettings ... %t\n", settings.printSettings)
+	log.Printf("    completeStop ....... %t\n", settings.completeStop)
 	log.Printf("    updateLog ....... %s\n", settings.updateLog)
-	log.Printf("    completeStop ....... %s\n", settings.completeStop)
+
 }
 
 func performUpdates(settings *Settings) {
