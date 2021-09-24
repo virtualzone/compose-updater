@@ -68,13 +68,18 @@ func (composeFiles *ComposeMap) updateAllContainers() {
 	}
 }
 
-func (containers *DockerContainerList) needsRestart() bool {
+func (containers *DockerContainerList) needsCompleteorRestart(settings *Settings) bool {
 	var needsRestart = false
 	for _, container := range *containers {
 		var newImageHash = (container.image.hash != getImageHash(container.image.id))
 		if newImageHash {
 			UpdateLog.Printf("Updated service %s in %s", container.composeServiceName, container.composeFile)
-			needsRestart = true
+			if (*settings).completeStop {
+				needsRestart = true
+			} else {
+				upDockerService(container.composeFile, container.composeServiceName)
+				log.Printf("Restarted service %s in %s", container.composeServiceName, container.composeFile)
+			}
 		}
 	}
 	return needsRestart
@@ -82,18 +87,14 @@ func (containers *DockerContainerList) needsRestart() bool {
 
 func (composeFiles *ComposeMap) checkPerformRestart(settings *Settings) {
 	for composeFile, containers := range *composeFiles {
-		if containers.needsRestart() {
+		if containers.needsCompleteorRestart(settings) {
 			log.Printf("Restarting %s ... ", composeFile)
-			if (*settings).completeStop {
-				log.Printf("Stopping %s ... ", composeFile)
-				downDockerCompose(composeFile)
-			}
-			log.Printf("Starting %s ... ", composeFile)
+			downDockerCompose(composeFile)
 			upDockerCompose(composeFile)
 			UpdateLog.Printf("Restarted %s", composeFile)
 			log.Println("OK")
 		} else {
-			log.Printf("Skipping %s\n", composeFile)
+			log.Printf("Skipping Restart %s\n", composeFile)
 		}
 	}
 }
@@ -129,7 +130,7 @@ func getSettings() *Settings {
 	boolFlagEnv(&settings.once, "once", "ONCE", true, "run once and exit, do not run in background")
 	boolFlagEnv(&settings.printSettings, "printSettings", "PRINT_SETTINGS", false, "print used settings")
 	stringFlagEnv(&settings.updateLog, "updateLog", "UPDATE_LOG", "", "update log file")
-	boolFlagEnv(&settings.completeStop, "completeStop", "COMPLETE_STOP", false, "Restart all services in docker-compose.yml (even unmanaged)")
+	boolFlagEnv(&settings.completeStop, "completeStop", "COMPLETE_STOP", false, "Restart all services in docker-compose.yml (even unmanaged) after a new image is pulled")
 	flag.Parse()
 	return settings
 }
@@ -142,7 +143,7 @@ func (settings *Settings) print() {
 	log.Printf("    interval ........ %d\n", settings.interval)
 	log.Printf("    once ............ %t\n", settings.once)
 	log.Printf("    printSettings ... %t\n", settings.printSettings)
-	log.Printf("    completeStop ....... %t\n", settings.completeStop)
+	log.Printf("    completeStop .... %t\n", settings.completeStop)
 	log.Printf("    updateLog ....... %s\n", settings.updateLog)
 
 }

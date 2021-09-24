@@ -193,6 +193,14 @@ func upDockerCompose(composeFile string) bool {
 	return true
 }
 
+func upDockerService(composeFile string, service string) bool {
+	err := exec.Command("docker-compose", "-f", composeFile, "up", "-d", service).Run()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 func cleanUp() bool {
 	err := exec.Command("docker", "system", "prune", "-a", "-f").Run()
 	if err != nil {
