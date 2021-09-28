@@ -48,7 +48,7 @@ Configure Compose Updater via environment variables (recommended) or command lin
 Env | Param | Default | Meaning
 --- | --- | --- | ---
 INTERVAL | -interval | 60 | Minutes between checks
-CLEANUP | -cleanup | 1 | Run docker system prune -a -f after each run
+CLEANUP | -cleanup | 0 | Run docker system prune -a -f after each run
 ONCE | -once | 0 | Run once and exit
 PRINT_SETTINGS | -printSettings | 1 | Print settings on start
 UPDATE_LOG | -updateLog | '' | Log file for updates and restarts

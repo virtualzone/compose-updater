@@ -42,4 +42,4 @@ RUN apk --no-cache --virtual .build-deps add \
     && pip3 install --no-cache-dir docker-compose==$COMPOSE_VERSION \
     && apk del .build-deps
 COPY --from=builder /go/src/app/main /usr/local/bin/docker-compose-watcher
-CMD ["docker-compose-watcher", "-once=0", "-printSettings", "-cleanup"]
+CMD ["docker-compose-watcher", "-once=0", "-printSettings"]
