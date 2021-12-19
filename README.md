@@ -52,6 +52,7 @@ CLEANUP | -cleanup | 1 | Run docker system prune -a -f after each run
 ONCE | -once | 0 | Run once and exit
 PRINT_SETTINGS | -printSettings | 1 | Print settings on start
 UPDATE_LOG | -updateLog | '' | Log file for updates and restarts
+COMPLETE_STOP | -completeStop | 0 | Restart all services in docker-compose.yml (even unmanaged) after a new image is pulled
 
 # License
 GNU General Public License v3.0
