@@ -7,7 +7,7 @@ RUN apt-get update && apt-get -y install curl
 RUN cd /tmp && \
     curl -L https://github.com/balena-io/qemu/releases/download/v6.0.0%2Bbalena1/qemu-6.0.0.balena1-arm.tar.gz | tar zxvf - -C . && mv qemu-6.0.0+balena1-arm/qemu-arm-static .
 
-FROM arm32v6/golang:${GO_VERSION} AS builder
+FROM arm32v6/golang:${GO_VERSION}-bullseye AS builder
 COPY --from=qemu /tmp/qemu-arm-static /usr/bin/
 RUN export GOBIN=$HOME/work/bin
 WORKDIR /go/src/app
