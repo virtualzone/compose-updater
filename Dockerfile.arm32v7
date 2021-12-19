@@ -1,22 +1,21 @@
-ARG ALPINE_VERSION=3.14
-ARG GO_VERSION=1.16
-ARG COMPOSE_VERSION=1.29.2
+ARG UBUNTU_VERSION=21.10
+ARG GO_VERSION=1.17
+ARG COMPOSE_VERSION=2.2.2
 
-FROM alpine:${ALPINE_VERSION} AS qemu
-RUN apk --update add --no-cache curl
+FROM ubuntu:${UBUNTU_VERSION} AS qemu
+RUN apt-get update && apt-get -y install curl
 RUN cd /tmp && \
-    curl -L https://github.com/balena-io/qemu/releases/download/v3.0.0%2Bresin/qemu-3.0.0+resin-arm.tar.gz | tar zxvf - -C . && mv qemu-3.0.0+resin-arm/qemu-arm-static .
+    curl -L https://github.com/balena-io/qemu/releases/download/v6.0.0%2Bbalena1/qemu-6.0.0.balena1-arm.tar.gz | tar zxvf - -C . && mv qemu-6.0.0+balena1-arm/qemu-arm-static .
 
-FROM arm32v7/golang:${GO_VERSION}-alpine AS builder
+FROM arm32v7/golang:${GO_VERSION}-bullseye AS builder
 COPY --from=qemu /tmp/qemu-arm-static /usr/bin/
-RUN apk --update add --no-cache git
 RUN export GOBIN=$HOME/work/bin
 WORKDIR /go/src/app
 ADD src/ .
 RUN go get -d -v ./...
 RUN CGO_ENABLED=1 go build -o main .
 
-FROM arm32v7/alpine:${ALPINE_VERSION}
+FROM arm32v7/ubuntu:${UBUNTU_VERSION}
 COPY --from=qemu /tmp/qemu-arm-static /usr/bin/
 ARG COMPOSE_VERSION
 ARG BUILD_DATE
@@ -27,24 +26,18 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
         org.label-schema.vcs-ref=$VCS_REF \
         org.label-schema.vcs-url="https://github.com/virtualzone/compose-updater" \
         org.label-schema.schema-version="1.0"
-RUN apk --no-cache add \
-    docker \
-    python3 \
-    py3-requests \
-    py3-distro \
-    py3-six
-RUN apk --no-cache --virtual .build-deps add \
-    py3-pip \
-    python3-dev \
-    libffi-dev \
-    openssl-dev \
-    gcc \
-    libc-dev \
-    make \
-    rust \
-    cargo \
-    && pip3 install --upgrade pip \
-    && pip3 install --no-cache-dir docker-compose==$COMPOSE_VERSION \
-    && apk del .build-deps
+RUN apt-get update && apt-get -y install \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    curl
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+RUN echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+RUN apt-get update && apt-get -y install docker-ce docker-ce-cli containerd.io
+RUN curl -L "https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-armv7" -o /usr/local/bin/docker-compose && \
+    chmod +x /usr/local/bin/docker-compose
 COPY --from=builder /go/src/app/main /usr/local/bin/docker-compose-watcher
 CMD ["docker-compose-watcher", "-once=0", "-printSettings", "-cleanup"]
