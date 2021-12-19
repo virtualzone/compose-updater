@@ -26,10 +26,6 @@ RUN apt-get update && apt-get -y install \
     curl \
     gnupg \
     lsb-release \
-    python3 \
-    python3-requests \
-    python3-distro \
-    python3-six \
     curl
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 RUN echo \
