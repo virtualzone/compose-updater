@@ -21,6 +21,7 @@ COPY --from=qemu /tmp/qemu-aarch64-static /usr/bin/
 ARG COMPOSE_VERSION
 ARG BUILD_DATE
 ARG VCS_REF
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
 LABEL org.label-schema.build-date=$BUILD_DATE \
         org.label-schema.name="Compose Updater" \
         org.label-schema.description="Automatically update your Docker Compose containers." \
