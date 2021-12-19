@@ -1,11 +1,11 @@
-ARG ALPINE_VERSION=3.14
-ARG GO_VERSION=1.16
+ARG ALPINE_VERSION=3.15
+ARG GO_VERSION=1.17
 ARG COMPOSE_VERSION=1.29.2
 
 FROM alpine:${ALPINE_VERSION} AS qemu
 RUN apk --update add --no-cache curl
 RUN cd /tmp && \
-    curl -L https://github.com/balena-io/qemu/releases/download/v3.0.0%2Bresin/qemu-3.0.0+resin-aarch64.tar.gz | tar zxvf - -C . && mv qemu-3.0.0+resin-aarch64/qemu-aarch64-static .
+    curl -L https://github.com/balena-io/qemu/releases/download/v6.0.0%2Bbalena1/qemu-6.0.0.balena1-aarch64.tar.gz | tar zxvf - -C . && mv qemu-6.0.0+balena1-aarch64/qemu-aarch64-static .
 
 FROM arm64v8/golang:${GO_VERSION}-alpine AS builder
 COPY --from=qemu /tmp/qemu-aarch64-static /usr/bin/
