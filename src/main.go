@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -95,7 +96,8 @@ func (composeFiles *ComposeMap) checkPerformRestart() {
 
 func boolFlagEnv(p *bool, name string, env string, value bool, usage string) {
 	flag.BoolVar(p, name, value, usage+" (env "+env+")")
-	if os.Getenv(env) != "" {
+	val := os.Getenv(env)
+	if (val != "") && (val != "0") && (strings.ToLower(val) != "false") {
 		*p = true
 	}
 }
