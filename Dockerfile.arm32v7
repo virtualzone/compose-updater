@@ -33,7 +33,7 @@ RUN apt-get update && apt-get -y install \
     python3-distro \
     python3-six \
     curl
-RUN curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-linux-armv7" -o /usr/local/bin/docker-compose && \
+RUN curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-armv7" -o /usr/local/bin/docker-compose && \
     chmod +x /usr/local/bin/docker-compose
 COPY --from=builder /go/src/app/main /usr/local/bin/docker-compose-watcher
 CMD ["docker-compose-watcher", "-once=0", "-printSettings", "-cleanup"]

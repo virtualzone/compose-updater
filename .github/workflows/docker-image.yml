@@ -40,14 +40,6 @@ jobs:
         push: true
         tags: |
           virtualzone/compose-updater:arm32v7
-    - name: Build and push arm32v6
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        file: ./Dockerfile.arm32v6
-        push: true
-        tags: |
-          virtualzone/compose-updater:arm32v6
     - name: Build and push arm64v8
       uses: docker/build-push-action@v2
       with:
