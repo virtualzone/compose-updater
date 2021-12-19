@@ -15,7 +15,7 @@ ADD src/ .
 RUN go get -d -v ./...
 RUN CGO_ENABLED=1 go build -o main .
 
-FROM arm32v7/ubuntu:${UBUNTU_VERSION}}
+FROM arm32v7/ubuntu:${UBUNTU_VERSION}
 COPY --from=qemu /tmp/qemu-arm-static /usr/bin/
 ARG COMPOSE_VERSION
 ARG BUILD_DATE
