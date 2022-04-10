@@ -43,3 +43,12 @@ jobs:
           virtualzone/compose-updater:latest
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache-new
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.CI_VERSION }}
+        release_name: ${{ env.CI_VERSION }}
+        draft: false
+        prerelease: false
