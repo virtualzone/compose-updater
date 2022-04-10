@@ -162,7 +162,7 @@ func getRunningContainerComposeFile(id string) string {
 }
 
 func composePull(composeFile string, serviceName string) bool {
-	err := exec.Command("docker-compose", "-f", composeFile, "pull", serviceName).Run()
+	err := exec.Command("docker", "compose", "-f", composeFile, "pull", serviceName).Run()
 	if err != nil {
 		return false
 	}
@@ -170,7 +170,7 @@ func composePull(composeFile string, serviceName string) bool {
 }
 
 func composeBuild(composeFile string, serviceName string) bool {
-	err := exec.Command("docker-compose", "-f", composeFile, "build", "--pull", serviceName).Run()
+	err := exec.Command("docker", "compose", "-f", composeFile, "build", "--pull", serviceName).Run()
 	if err != nil {
 		return false
 	}
@@ -178,7 +178,7 @@ func composeBuild(composeFile string, serviceName string) bool {
 }
 
 func downDockerCompose(composeFile string) bool {
-	err := exec.Command("docker-compose", "-f", composeFile, "down", "--remove-orphans").Run()
+	err := exec.Command("docker", "compose", "-f", composeFile, "down", "--remove-orphans").Run()
 	if err != nil {
 		return false
 	}
@@ -186,7 +186,7 @@ func downDockerCompose(composeFile string) bool {
 }
 
 func upDockerCompose(composeFile string) bool {
-	err := exec.Command("docker-compose", "-f", composeFile, "up", "-d").Run()
+	err := exec.Command("docker", "compose", "-f", composeFile, "up", "-d").Run()
 	if err != nil {
 		return false
 	}
@@ -194,7 +194,7 @@ func upDockerCompose(composeFile string) bool {
 }
 
 func upDockerService(composeFile string, service string) bool {
-	err := exec.Command("docker-compose", "-f", composeFile, "up", "-d", service).Run()
+	err := exec.Command("docker", "compose", "-f", composeFile, "up", "-d", service).Run()
 	if err != nil {
 		return false
 	}
@@ -211,7 +211,7 @@ func cleanUp() bool {
 
 func parseComposeYaml(composeFile string) ComposeYaml {
 	result := ComposeYaml{}
-	data, err := exec.Command("docker-compose", "-f", composeFile, "config").Output()
+	data, err := exec.Command("docker", "compose", "-f", composeFile, "config").Output()
 	if err == nil {
 		err = yaml.Unmarshal(data, &result)
 	}
