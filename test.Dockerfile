@@ -20,6 +20,7 @@ RUN \
       "linux/amd64")  DOWNLOAD_ARCH="x86_64"  ;; \
       "linux/arm64") DOWNLOAD_ARCH="aarch64"  ;; \
       "linux/arm/v7") DOWNLOAD_ARCH="armv7"  ;; \
+      *) DOWNLOAD_ARCH="x86_64"  ;; \
     esac && \
     mkdir -p /usr/local/lib/docker/cli-plugins && \
     echo "https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-${DOWNLOAD_ARCH}" && \
