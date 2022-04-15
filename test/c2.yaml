@@ -1,0 +1,12 @@
+version: '3'
+services:
+  test1:
+    image: watcher-test-2
+    labels:
+      - "docker-compose-watcher.watch=1"
+      - "docker-compose-watcher.dir=${PWD}/c2"
+  test2:
+    image: nginx:alpine
+    labels:
+      - "docker-compose-watcher.watch=1"
+      - "docker-compose-watcher.dir=${PWD}/c2"
