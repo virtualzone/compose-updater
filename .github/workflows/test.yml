@@ -17,4 +17,4 @@ jobs:
     - name: Build integration test image
       run: docker build -t compose-test -f test.Dockerfile .
     - name: Run integration test
-      run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro -it compose-test
+      run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro -t compose-test
