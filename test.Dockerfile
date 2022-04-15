@@ -22,6 +22,7 @@ RUN \
       "linux/arm/v7") DOWNLOAD_ARCH="armv7"  ;; \
     esac && \
     mkdir -p /usr/local/lib/docker/cli-plugins && \
+    echo "https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-${DOWNLOAD_ARCH}" && \
     curl -SLf https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-${DOWNLOAD_ARCH} -o /usr/local/lib/docker/cli-plugins/docker-compose && \
     chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 WORKDIR /test
