@@ -47,7 +47,15 @@ services:
 
 It's important to mount ```/var/run/docker.sock``` and the directory your compose files reside in (```/home/docker``` in the example above).
 
-Note: You'll only need one Compose Updater instance for all your compose services (not one per docker-compose.yml).
+If the registry you're pulling from require authentification, you could mount `~/.docker/config.json` from the host inside the `watcher` service.
+Assuming your host user is called `ubuntu`, adding this line to the `volumes` declaration of the `watcher` service should work :
+```yaml
+volumes:
+  # Mount repository configuration (including http(s) settings and credentials) from the host to the container (assuming the host user is called ubuntu)
+  - "/home/ubuntu/.docker/config.json:/root/.docker/config.json:ro"
+```
+
+**Note:** You'll only need one Compose Updater instance for all your compose services (not one per docker-compose.yml).
 
 ## Settings
 Configure Compose Updater via environment variables (recommended) or command line arguments:
