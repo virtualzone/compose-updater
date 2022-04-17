@@ -2,10 +2,11 @@ package main
 
 import (
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // DockerImage is a docker image
@@ -75,14 +76,15 @@ func getWatchedRunningContainerIDs() []string {
 }
 
 func getRunningContainerDetails(id string) DockerContainer {
+	details := getRunningContainerRawDetails(id)
 	return DockerContainer{
 		id:                 id,
-		name:               getRunningContainerImageName(id),
-		composeServiceName: getRunningContainerComposeServiceName(id),
-		composeFile:        getRunningContainerComposeFile(id),
+		name:               getRunningContainerImageName(details),
+		composeServiceName: getRunningContainerComposeServiceName(details),
+		composeFile:        getRunningContainerComposeFile(details),
 		image: DockerImage{
-			id:   getRunningContainerImageID(id),
-			hash: getRunningContainerImageHash(id),
+			id:   getRunningContainerImageID(details),
+			hash: getRunningContainerImageHash(details),
 		},
 	}
 }
@@ -97,66 +99,58 @@ func getImageHash(id string) string {
 	return strings.TrimSpace(string(out))
 }
 
-func getRunningContainerImageHash(id string) string {
-	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{.Image}}", id).Output()
+func getRunningContainerRawDetails(id string) []string {
+	details := []string{
+		"{{.Image}}",
+		"{{.Config.Image}}",
+		"{{.Name}}",
+		"{{index .Config.Labels \"com.docker.compose.service\"}}",
+		"{{index .Config.Labels \"docker-compose-watcher.file\"}}",
+		"{{index .Config.Labels \"docker-compose-watcher.dir\"}}",
+	}
+	formatting := strings.Join(details, "|")
+	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", formatting, id).Output()
 	if err != nil {
-		log.Printf("Failed in getRunningContainerImageHash('%s')", id)
+		log.Printf("Failed in getRunningContainerDetails('%s')", id)
 		log.Printf("Result: %s\n", out)
 		log.Fatal(err)
 	}
-	return strings.TrimSpace(string(out))
+	res := strings.Split(string(out), "|")
+	for i, s := range res {
+		s = strings.TrimSpace(s)
+		if s == "<no value>" {
+			s = ""
+		}
+		res[i] = s
+	}
+	return res
 }
 
-func getRunningContainerImageID(id string) string {
-	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{.Config.Image}}", id).Output()
-	if err != nil {
-		log.Printf("Failed in getRunningContainerImageID('%s')", id)
-		log.Printf("Result: %s\n", out)
-		log.Fatal(err)
-	}
-	return strings.TrimSpace(string(out))
+func getRunningContainerImageHash(rawDetails []string) string {
+	return rawDetails[0]
 }
 
-func getRunningContainerImageName(id string) string {
-	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{.Name}}", id).Output()
-	if err != nil {
-		log.Printf("Failed in getRunningContainerImageName('%s')", id)
-		log.Printf("Result: %s\n", out)
-		log.Fatal(err)
-	}
-	return strings.TrimSpace(string(out))
+func getRunningContainerImageID(rawDetails []string) string {
+	return rawDetails[1]
 }
 
-func getRunningContainerComposeServiceName(id string) string {
-	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{index .Config.Labels \"com.docker.compose.service\"}}", id).Output()
-	if err != nil {
-		log.Printf("Failed in getRunningContainerComposeServiceName('%s')", id)
-		log.Printf("Result: %s\n", out)
-		log.Fatal(err)
-	}
-	return strings.TrimSpace(string(out))
+func getRunningContainerImageName(rawDetails []string) string {
+	return rawDetails[2]
 }
 
-func getRunningContainerComposeFile(id string) string {
-	out, err := exec.Command("docker", "inspect", "--type", "container", "--format", "{{index .Config.Labels \"docker-compose-watcher.file\"}}", id).Output()
-	if err != nil {
-		log.Printf("Failed in getRunningContainerComposeFile('%s')", id)
-		log.Printf("Result: %s\n", out)
-		log.Fatal(err)
-	}
-	fileName := strings.TrimSpace(string(out))
+func getRunningContainerComposeServiceName(rawDetails []string) string {
+	return rawDetails[3]
+}
+
+func getRunningContainerComposeFile(rawDetails []string) string {
+	fileName := rawDetails[4]
 	if fileName == "" {
-		out, err = exec.Command("docker", "inspect", "--type", "container", "--format", "{{index .Config.Labels \"docker-compose-watcher.dir\"}}", id).Output()
-		if err != nil {
-			log.Printf("Failed in getRunningContainerComposeFile('%s')", id)
-			log.Printf("Result: %s\n", out)
-			log.Fatal(err)
+		fileName = strings.TrimSuffix(rawDetails[5], "/")
+		if _, err := os.Stat(fileName + "/docker-compose.yml"); err == nil {
+			fileName = fileName + "/docker-compose.yml"
+		} else {
+			fileName = fileName + "/docker-compose.yaml"
 		}
-		fileName = strings.TrimSpace(string(out))
-		if strings.Index(fileName, "/") != len(fileName)-1 {
-			fileName += "/"
-		}
-		fileName += "docker-compose.yml"
 	}
 	return fileName
 }
