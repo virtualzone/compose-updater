@@ -17,7 +17,9 @@ function checkLogContains() {
 }
 
 function runComposeUpdateAndLog() {
+    # docker inspect --type container c1-test11-1 --format "{{index .Config.Labels \"docker-compose-watcher.file\"}}"
     ONCE=1 ${WORKDIR}/docker-compose-watcher &> ${WORKDIR}/test.log
+    cat ${WORKDIR}/test.log
 }
 
 function prepareBin() {
@@ -49,6 +51,56 @@ function checkDocker() {
     fi
 }
 
+function testShouldFindNoUpdates() {
+    TESTNAME="Should find no updates"
+    runComposeUpdateAndLog
+    checkLogContains "${TESTNAME} / check c1 found" "Checking for updates of services in ${WORKDIR}/c1/compose1.yaml" 1
+    checkLogContains "${TESTNAME} / check c2 found" "Checking for updates of services in ${WORKDIR}/c2/docker-compose.yml" 1
+    checkLogContains "${TESTNAME} / check service test11 found" "Processing service test11" 1
+    checkLogContains "${TESTNAME} / check service test12 found" "Processing service test12" 1
+    checkLogContains "${TESTNAME} / check service test13 found" "Processing service test13" 1
+    checkLogContains "${TESTNAME} / check service test21 found" "Processing service test21" 1
+    checkLogContains "${TESTNAME} / check service test22 found" "Processing service test22" 1
+    checkLogContains "${TESTNAME} / check no pulls" "Pulled new image" 0
+    checkLogContains "${TESTNAME} / check no builds" "Built new image" 0
+    checkLogContains "${TESTNAME} / check no service restarts in c1" "Restarting services in ${WORKDIR}/c1/compose1.yaml" 0
+    checkLogContains "${TESTNAME} / check no service restarts in c2" "Restarting services in ${WORKDIR}/c2/docker-compose.yml" 0
+}
+
+function testShouldFindUpdateC1() {
+    TESTNAME="Should find update of watcher-test-1 / test11 (c1-test11-1)"
+    docker build -q --no-cache -t watcher-test-1 ${WORKDIR}
+    runComposeUpdateAndLog
+    checkLogContains "${TESTNAME} / check c1 found" "Checking for updates of services in ${WORKDIR}/c1/compose1.yaml" 1
+    checkLogContains "${TESTNAME} / check c2 found" "Checking for updates of services in ${WORKDIR}/c2/docker-compose.yml" 1
+    checkLogContains "${TESTNAME} / check service test11 found" "Processing service test11" 1
+    checkLogContains "${TESTNAME} / check service test12 found" "Processing service test12" 1
+    checkLogContains "${TESTNAME} / check service test13 found" "Processing service test13" 1
+    checkLogContains "${TESTNAME} / check service test21 found" "Processing service test21" 1
+    checkLogContains "${TESTNAME} / check service test22 found" "Processing service test22" 1
+    checkLogContains "${TESTNAME} / check one pull" "Pulled new image" 1
+    checkLogContains "${TESTNAME} / check no builds" "Built new image" 0
+    checkLogContains "${TESTNAME} / check no service restarts in c1" "Restarting services in ${WORKDIR}/c1/compose1.yaml" 1
+    checkLogContains "${TESTNAME} / check no service restarts in c2" "Restarting services in ${WORKDIR}/c2/docker-compose.yml" 0
+}
+
+function testShouldFindUpdateC2() {
+    TESTNAME="Should find update of watcher-test-2 / test21 (c2-test21-1)"
+    docker build -q --no-cache -t watcher-test-2 ${WORKDIR}
+    runComposeUpdateAndLog
+    checkLogContains "${TESTNAME} / check c1 found" "Checking for updates of services in ${WORKDIR}/c1/compose1.yaml" 1
+    checkLogContains "${TESTNAME} / check c2 found" "Checking for updates of services in ${WORKDIR}/c2/docker-compose.yml" 1
+    checkLogContains "${TESTNAME} / check service test11 found" "Processing service test11" 1
+    checkLogContains "${TESTNAME} / check service test12 found" "Processing service test12" 1
+    checkLogContains "${TESTNAME} / check service test13 found" "Processing service test13" 1
+    checkLogContains "${TESTNAME} / check service test21 found" "Processing service test21" 1
+    checkLogContains "${TESTNAME} / check service test22 found" "Processing service test22" 1
+    checkLogContains "${TESTNAME} / check one pull" "Pulled new image" 1
+    checkLogContains "${TESTNAME} / check no builds" "Built new image" 0
+    checkLogContains "${TESTNAME} / check no service restarts in c1" "Restarting services in ${WORKDIR}/c1/compose1.yaml" 0
+    checkLogContains "${TESTNAME} / check no service restarts in c2" "Restarting services in ${WORKDIR}/c2/docker-compose.yml" 1
+}
+
 echo "Working directory: ${WORKDIR}"
 
 echo "Preparing working environment..."
@@ -56,8 +108,9 @@ checkDocker
 rm -rf ${WORKDIR}
 mkdir -p ${WORKDIR} ${WORKDIR}/c1 ${WORKDIR}/c2 ${WORKDIR}/src
 cp ./test.Dockerfile ${WORKDIR}/Dockerfile
-cp ./c1.yaml ${WORKDIR}/c1/compose1.yaml
-cp ./c2.yaml ${WORKDIR}/c2/docker-compose.yml
+PWD=$(echo ${WORKDIR} | sed 's_/_\\/_g')
+cat ./c1.yaml | sed "s/\${PWD}/${PWD}/g" > ${WORKDIR}/c1/compose1.yaml
+cat ./c2.yaml | sed "s/\${PWD}/${PWD}/g" > ${WORKDIR}/c2/docker-compose.yml
 prepareBin
 
 echo "Building watcher-test..."
@@ -65,38 +118,19 @@ docker build -q --no-cache -t watcher-test-1 ${WORKDIR}
 docker build -q --no-cache -t watcher-test-2 ${WORKDIR}
 
 echo "Starting composition 1..."
-PWD=${WORKDIR} docker compose -f ${WORKDIR}/c1/compose1.yaml up -d --quiet-pull
+docker compose -f ${WORKDIR}/c1/compose1.yaml up -d --quiet-pull
 
 echo "Starting composition 2..."
-PWD=${WORKDIR} docker compose -f ${WORKDIR}/c2/docker-compose.yml up -d --quiet-pull
+docker compose -f ${WORKDIR}/c2/docker-compose.yml up -d --quiet-pull
 
 echo "Running integration test..."
-
-TESTNAME="Should find no updates"
-runComposeUpdateAndLog
-checkLogContains "${TESTNAME}" "Skipping Restart ${WORKDIR}/c1/compose1.yaml" 1
-checkLogContains "${TESTNAME}" "Skipping Restart ${WORKDIR}/c2/docker-compose.yml" 1
-checkLogContains "${TESTNAME}" "Restarted service" 0
-
-TESTNAME="Should find update of watcher-test-1 / test1 (c1-test1-1)"
-docker build -q --no-cache -t watcher-test-1 ${WORKDIR}
-runComposeUpdateAndLog
-checkLogContains "${TESTNAME}" "Restarted service test1 in ${WORKDIR}/c1/compose1.yaml" 1
-checkLogContains "${TESTNAME}" "Skipping Restart ${WORKDIR}/c1/compose1.yaml" 1
-checkLogContains "${TESTNAME}" "Skipping Restart ${WORKDIR}/c2/docker-compose.yml" 1
-checkLogContains "${TESTNAME}" "Restarted service" 1
-
-TESTNAME="Should find update of watcher-test-2 / test2 (c2-test1-1)"
-docker build -q --no-cache -t watcher-test-2 ${WORKDIR}
-runComposeUpdateAndLog
-checkLogContains "${TESTNAME}" "Restarted service test1 in ${WORKDIR}/c2/docker-compose.yml" 1
-checkLogContains "${TESTNAME}" "Skipping Restart ${WORKDIR}/c1/compose1.yaml" 1
-checkLogContains "${TESTNAME}" "Skipping Restart ${WORKDIR}/c2/docker-compose.yml" 1
-checkLogContains "${TESTNAME}" "Restarted service" 1
+testShouldFindNoUpdates
+testShouldFindUpdateC1
+testShouldFindUpdateC2
 
 echo "Cleaning up..."
-PWD=${WORKDIR} docker compose -f ${WORKDIR}/c1/compose1.yaml down
-PWD=${WORKDIR} docker compose -f ${WORKDIR}/c2/docker-compose.yml down
+docker compose -f ${WORKDIR}/c1/compose1.yaml down
+docker compose -f ${WORKDIR}/c2/docker-compose.yml down
 rm -rf ${WORKDIR}
 
 echo "Successful tests: ${SUCCESSFUL_TESTS}"
