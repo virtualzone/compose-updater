@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os/exec"
 )
 
@@ -17,7 +16,6 @@ type ComposeService struct {
 }
 
 func (s *ComposeService) Pull() bool {
-	log.Println("Running: ", "docker", "compose", "-f", s.ComposeFile.YamlFilePath, "pull", s.Name)
 	err := exec.Command("docker", "compose", "-f", s.ComposeFile.YamlFilePath, "pull", s.Name).Run()
 	if err != nil {
 		return false

@@ -12,6 +12,9 @@ func PerformComposeUpdates() {
 		compositionRestart := false
 		log.Printf("Checking for updates of services in %s...\n", composeFile.YamlFilePath)
 		for _, service := range composeFile.Services {
+			if service.Instance == nil {
+				continue
+			}
 			requiresBuild := len(service.BuildInfo) > 0
 			log.Printf("Processing service %s (requires build: %t)...\n", service.Name, requiresBuild)
 			if !requiresBuild {
