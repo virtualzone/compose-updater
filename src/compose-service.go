@@ -31,15 +31,19 @@ func (s *ComposeService) Build() bool {
 	return true
 }
 
-/*
+func (s *ComposeService) RequiresBuild() bool {
+	return len(s.BuildInfo) > 0
+}
+
+func (s *ComposeService) IsWatched() bool {
+	return s.Instance != nil
+}
+
+// ATTENTION: docker compose restart does not use an updated image in Docker Compose V2 yet.
 func (s *ComposeService) Restart() bool {
-	log.Println("docker", "compose", "-f", s.ComposeFile.YamlFilePath, "up", "-d", "--no-deps", s.Name)
-	out, err := exec.Command("docker", "compose", "-f", s.ComposeFile.YamlFilePath, "up", "-d", "--no-deps", s.Name).CombinedOutput()
+	err := exec.Command("docker", "compose", "-f", s.ComposeFile.YamlFilePath, "up", "-d", "--no-deps", s.Name).Run()
 	if err != nil {
-		log.Println(err)
 		return false
 	}
-	log.Println("-----> " + string(out))
 	return true
 }
-*/

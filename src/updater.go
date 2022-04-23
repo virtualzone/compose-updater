@@ -5,58 +5,22 @@ import (
 	"os/exec"
 )
 
-func PerformComposeUpdates() {
-	log.Println("Gathering details about running containers...")
-	composeFiles := createComposeFileContainerMapping()
+type Updater struct{}
+
+func (u *Updater) PerformComposeUpdates() {
+	EventBus.OnPerformUpdatesStart()
+	composeFiles := u.createComposeFileContainerMapping()
 	for _, composeFile := range composeFiles {
-		compositionRestart := false
-		log.Printf("Checking for updates of services in %s...\n", composeFile.YamlFilePath)
-		for _, service := range composeFile.Services {
-			if service.Instance == nil {
-				continue
-			}
-			requiresBuild := len(service.BuildInfo) > 0
-			log.Printf("Processing service %s (requires build: %t)...\n", service.Name, requiresBuild)
-			if !requiresBuild {
-				service.Pull()
-			} else if GlobalSettings.Build {
-				service.Build()
-			}
-			newImage := CreateDockerImageInstance(service.Instance.Image.ID)
-			if service.Instance.Image.Hash != newImage.Hash {
-				if requiresBuild {
-					log.Printf("Built new image for service %s\n", service.Name)
-				} else {
-					log.Printf("Pulled new image %s for service %s\n", service.ImageName, service.Name)
-				}
-				/*
-					Not working with Docker Compose V2 yet
-					if !GlobalSettings.CompleteStop {
-						log.Printf("Restarting service %s in %s...\n", service.Name, composeFile.YamlFilePath)
-						service.Restart()
-					} else {
-						compositionRestart = true
-					}
-				*/
-				compositionRestart = true
-			}
-		}
-		if compositionRestart {
-			if GlobalSettings.Dry {
-				log.Printf("Dry-Mode enabled, not restarting services in %s\n", composeFile.YamlFilePath)
-			} else {
-				log.Printf("Restarting services in %s...\n", composeFile.YamlFilePath)
-				composeFile.Down()
-				composeFile.Up()
-				log.Printf("Restarted services in %s\n", composeFile.YamlFilePath)
-			}
-		} else {
-			log.Printf("No need to restart services in %s\n", composeFile.YamlFilePath)
-		}
+		u.processComposeFile(composeFile)
 	}
+	if GlobalSettings.Cleanup {
+		u.CleanUp()
+	}
+	EventBus.OnPerformUpdatesComplete()
 }
 
-func CleanUp() bool {
+func (u *Updater) CleanUp() bool {
+	EventBus.OnImagePruneStart()
 	err := exec.Command("docker", "image", "prune", "-a", "-f").Run()
 	if err != nil {
 		return false
@@ -64,7 +28,48 @@ func CleanUp() bool {
 	return true
 }
 
-func createComposeFileContainerMapping() []*ComposeFile {
+func (u *Updater) processComposeFile(composeFile *ComposeFile) {
+	EventBus.OnProcessComposeFileStart(composeFile)
+	compositionRestart := false
+	for _, service := range composeFile.Services {
+		compositionRestart = u.processService(service) || compositionRestart
+	}
+	if compositionRestart {
+		if GlobalSettings.Dry {
+			EventBus.OnSkipRestartComposeFileDryMode(composeFile)
+		} else {
+			EventBus.OnRestartComposeFile(composeFile)
+			composeFile.Down()
+			composeFile.Up()
+			EventBus.OnRestartComposeFileComplete(composeFile)
+		}
+	} else {
+		EventBus.OnSkipRestartComposeFileNoUpdates(composeFile)
+	}
+}
+
+func (u *Updater) processService(service *ComposeService) bool {
+	EventBus.OnProcessServiceStart(service)
+	if !service.IsWatched() {
+		return false
+	}
+	if !service.RequiresBuild() {
+		service.Pull()
+	} else if GlobalSettings.Build {
+		service.Build()
+	}
+	if service.Instance.Image.ExistsNewerImageHash() {
+		if service.RequiresBuild() {
+			EventBus.OnServiceNewImageBuilt(service)
+		} else {
+			EventBus.OnServiceNewImagePulled(service)
+		}
+		return true
+	}
+	return false
+}
+
+func (u *Updater) createComposeFileContainerMapping() []*ComposeFile {
 	containers := GetWatchedRunningContainers()
 	cache := make(map[string]*ComposeFile)
 	for _, container := range containers {

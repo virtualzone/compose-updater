@@ -32,3 +32,8 @@ func (i *DockerImage) ReadImageHash() error {
 	i.Hash = strings.TrimSpace(string(out))
 	return nil
 }
+
+func (i *DockerImage) ExistsNewerImageHash() bool {
+	newImage := CreateDockerImageInstance(i.ID)
+	return i.Hash != newImage.Hash
+}

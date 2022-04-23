@@ -10,3 +10,5 @@ services:
     labels:
       - "docker-compose-watcher.watch=1"
       - "docker-compose-watcher.dir=${PWD}/c2"
+  test23:
+    image: nginx:alpine

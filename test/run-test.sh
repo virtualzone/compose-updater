@@ -56,11 +56,12 @@ function testShouldFindNoUpdates() {
     runComposeUpdateAndLog
     checkLogContains "${TESTNAME} / check c1 found" "Checking for updates of services in ${WORKDIR}/c1/compose1.yaml" 1
     checkLogContains "${TESTNAME} / check c2 found" "Checking for updates of services in ${WORKDIR}/c2/docker-compose.yml" 1
-    checkLogContains "${TESTNAME} / check service test11 found" "Processing service test11" 1
-    checkLogContains "${TESTNAME} / check service test12 found" "Processing service test12" 1
-    checkLogContains "${TESTNAME} / check service test13 found" "Processing service test13" 1
-    checkLogContains "${TESTNAME} / check service test21 found" "Processing service test21" 1
-    checkLogContains "${TESTNAME} / check service test22 found" "Processing service test22" 1
+    checkLogContains "${TESTNAME} / check service test11 found" "Processing service test11 (requires build: false, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test12 found" "Processing service test12 (requires build: true, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test13 found" "Processing service test13 (requires build: true, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test21 found" "Processing service test21 (requires build: false, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test22 found" "Processing service test22 (requires build: false, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test23 found" "Processing service test23 (requires build: false, watched: false)" 1
     checkLogContains "${TESTNAME} / check no pulls" "Pulled new image" 0
     checkLogContains "${TESTNAME} / check no builds" "Built new image" 0
     checkLogContains "${TESTNAME} / check no service restarts in c1" "Restarting services in ${WORKDIR}/c1/compose1.yaml" 0
@@ -73,11 +74,12 @@ function testShouldFindUpdateC1() {
     runComposeUpdateAndLog
     checkLogContains "${TESTNAME} / check c1 found" "Checking for updates of services in ${WORKDIR}/c1/compose1.yaml" 1
     checkLogContains "${TESTNAME} / check c2 found" "Checking for updates of services in ${WORKDIR}/c2/docker-compose.yml" 1
-    checkLogContains "${TESTNAME} / check service test11 found" "Processing service test11" 1
-    checkLogContains "${TESTNAME} / check service test12 found" "Processing service test12" 1
-    checkLogContains "${TESTNAME} / check service test13 found" "Processing service test13" 1
-    checkLogContains "${TESTNAME} / check service test21 found" "Processing service test21" 1
-    checkLogContains "${TESTNAME} / check service test22 found" "Processing service test22" 1
+    checkLogContains "${TESTNAME} / check service test11 found" "Processing service test11 (requires build: false, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test12 found" "Processing service test12 (requires build: true, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test13 found" "Processing service test13 (requires build: true, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test21 found" "Processing service test21 (requires build: false, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test22 found" "Processing service test22 (requires build: false, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test23 found" "Processing service test23 (requires build: false, watched: false)" 1
     checkLogContains "${TESTNAME} / check one pull" "Pulled new image" 1
     checkLogContains "${TESTNAME} / check no builds" "Built new image" 0
     checkLogContains "${TESTNAME} / check no service restarts in c1" "Restarting services in ${WORKDIR}/c1/compose1.yaml" 1
@@ -90,11 +92,12 @@ function testShouldFindUpdateC2() {
     runComposeUpdateAndLog
     checkLogContains "${TESTNAME} / check c1 found" "Checking for updates of services in ${WORKDIR}/c1/compose1.yaml" 1
     checkLogContains "${TESTNAME} / check c2 found" "Checking for updates of services in ${WORKDIR}/c2/docker-compose.yml" 1
-    checkLogContains "${TESTNAME} / check service test11 found" "Processing service test11" 1
-    checkLogContains "${TESTNAME} / check service test12 found" "Processing service test12" 1
-    checkLogContains "${TESTNAME} / check service test13 found" "Processing service test13" 1
-    checkLogContains "${TESTNAME} / check service test21 found" "Processing service test21" 1
-    checkLogContains "${TESTNAME} / check service test22 found" "Processing service test22" 1
+    checkLogContains "${TESTNAME} / check service test11 found" "Processing service test11 (requires build: false, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test12 found" "Processing service test12 (requires build: true, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test13 found" "Processing service test13 (requires build: true, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test21 found" "Processing service test21 (requires build: false, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test22 found" "Processing service test22 (requires build: false, watched: true)" 1
+    checkLogContains "${TESTNAME} / check service test23 found" "Processing service test23 (requires build: false, watched: false)" 1
     checkLogContains "${TESTNAME} / check one pull" "Pulled new image" 1
     checkLogContains "${TESTNAME} / check no builds" "Built new image" 0
     checkLogContains "${TESTNAME} / check no service restarts in c1" "Restarting services in ${WORKDIR}/c1/compose1.yaml" 0

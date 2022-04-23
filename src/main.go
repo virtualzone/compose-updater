@@ -29,13 +29,9 @@ func printHeader() {
 }
 
 func mainLoop() {
+	updater := &Updater{}
 	for {
-		PerformComposeUpdates()
-		if GlobalSettings.Cleanup {
-			log.Println("Removing unused images...")
-			CleanUp()
-		}
-		log.Println("Done.")
+		updater.PerformComposeUpdates()
 		if GlobalSettings.Once {
 			return
 		}
@@ -54,6 +50,7 @@ func main() {
 	if GlobalSettings.PrintSettings {
 		GlobalSettings.Print()
 	}
+	CreateEventBus()
 	initLogger(GlobalSettings.UpdateLog)
 	mainLoop()
 }
