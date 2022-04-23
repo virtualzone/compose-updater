@@ -31,6 +31,11 @@ func printHeader() {
 func mainLoop() {
 	for {
 		PerformComposeUpdates()
+		if GlobalSettings.Cleanup {
+			log.Println("Removing unused images...")
+			CleanUp()
+		}
+		log.Println("Done.")
 		if GlobalSettings.Once {
 			return
 		}

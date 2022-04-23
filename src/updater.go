@@ -50,11 +50,10 @@ func PerformComposeUpdates() {
 			log.Printf("No need to restart services in %s\n", composeFile.YamlFilePath)
 		}
 	}
-	log.Println("Done.")
 }
 
 func CleanUp() bool {
-	err := exec.Command("docker", "system", "prune", "-a", "-f").Run()
+	err := exec.Command("docker", "image", "prune", "-a", "-f").Run()
 	if err != nil {
 		return false
 	}
