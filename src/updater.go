@@ -42,10 +42,14 @@ func PerformComposeUpdates() {
 			}
 		}
 		if compositionRestart {
-			log.Printf("Restarting services in %s...\n", composeFile.YamlFilePath)
-			composeFile.Down()
-			composeFile.Up()
-			log.Printf("Restarted services in %s\n", composeFile.YamlFilePath)
+			if GlobalSettings.Dry {
+				log.Printf("Dry-Mode enabled, not restarting services in %s\n", composeFile.YamlFilePath)
+			} else {
+				log.Printf("Restarting services in %s...\n", composeFile.YamlFilePath)
+				composeFile.Down()
+				composeFile.Up()
+				log.Printf("Restarted services in %s\n", composeFile.YamlFilePath)
+			}
 		} else {
 			log.Printf("No need to restart services in %s\n", composeFile.YamlFilePath)
 		}
