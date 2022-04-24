@@ -2,6 +2,7 @@
 WORKDIR=/tmp/compose-updater-test
 FAILED_TESTS=0
 SUCCESSFUL_TESTS=0
+MQTT_PASS=test1234
 
 # $1 = Test name
 # $2 = String to check
@@ -16,10 +17,30 @@ function checkLogContains() {
     fi
 }
 
+# $1 = Test name
+# $2 = String to check
+# $3 = Number of times the string must appear in order to succeed
+function checkMqttLogContains() {
+    if ((`grep "$2" ${WORKDIR}/mqtt.log | wc -l` != $3)); then
+        echo "Failed: $1"
+        ((FAILED_TESTS=FAILED_TESTS+1))
+    else
+        echo "Success: $1"
+        ((SUCCESSFUL_TESTS=SUCCESSFUL_TESTS+1))
+    fi
+}
+
 function runComposeUpdateAndLog() {
-    # docker inspect --type container c1-test11-1 --format "{{index .Config.Labels \"docker-compose-watcher.file\"}}"
-    ONCE=1 ${WORKDIR}/docker-compose-watcher &> ${WORKDIR}/test.log
+    sh -c "docker exec compose-test-mqtt mosquitto_sub -h 127.0.0.1 -u compose-updater -P ${MQTT_PASS} -t 'composeupdater/#' -v" &> ${WORKDIR}/mqtt.log &
+    sleep 1
+    ONCE=1 PRINT_SETTINGS=1 MQTT_BROKER=tcp://127.0.0.1:1883 MQTT_USERNAME=compose-updater MQTT_PASSWORD=${MQTT_PASS} ${WORKDIR}/docker-compose-watcher &> ${WORKDIR}/test.log
+    sleep 1
+    kill $(ps | grep "docker exec compose-test-mqtt mosquitto_sub" | grep -v "grep" | cut -d' ' -f 1)
+    echo "------------ Compose Updater Log ------------"
     cat ${WORKDIR}/test.log
+    echo "----------------- MQTT Log ------------------"
+    cat ${WORKDIR}/mqtt.log
+    echo "---------------------------------------------"
 }
 
 function prepareBin() {
@@ -66,6 +87,10 @@ function testShouldFindNoUpdates() {
     checkLogContains "${TESTNAME} / check no builds" "Built new image" 0
     checkLogContains "${TESTNAME} / check no service restarts in c1" "Restarting services in ${WORKDIR}/c1/compose1.yaml" 0
     checkLogContains "${TESTNAME} / check no service restarts in c2" "Restarting services in ${WORKDIR}/c2/docker-compose.yml" 0
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains start message" "composeupdater/update start" 1
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains done message" "composeupdater/update done" 1
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains no restarting message" "composeupdater/update/composition/restart/start" 0
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains no restart complete message" "composeupdater/update/composition/restart/done" 0
 }
 
 function testShouldFindUpdateC1() {
@@ -84,6 +109,11 @@ function testShouldFindUpdateC1() {
     checkLogContains "${TESTNAME} / check no builds" "Built new image" 0
     checkLogContains "${TESTNAME} / check no service restarts in c1" "Restarting services in ${WORKDIR}/c1/compose1.yaml" 1
     checkLogContains "${TESTNAME} / check no service restarts in c2" "Restarting services in ${WORKDIR}/c2/docker-compose.yml" 0
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains start message" "composeupdater/update start" 1
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains done message" "composeupdater/update done" 1
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains pulled message" "composeupdater/update/composition/service/pulled {\"composeFile\":\"${WORKDIR}/c1/compose1.yaml\",\"services\":\[{\"name\":\"test11\",\"image\":\"watcher-test-1\"}\]}" 1
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains restarting message" "composeupdater/update/composition/restart/start {\"composeFile\":\"${WORKDIR}/c1/compose1.yaml\"" 1
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains restart complete message" "composeupdater/update/composition/restart/done {\"composeFile\":\"${WORKDIR}/c1/compose1.yaml\"" 1
 }
 
 function testShouldFindUpdateC2() {
@@ -102,6 +132,11 @@ function testShouldFindUpdateC2() {
     checkLogContains "${TESTNAME} / check no builds" "Built new image" 0
     checkLogContains "${TESTNAME} / check no service restarts in c1" "Restarting services in ${WORKDIR}/c1/compose1.yaml" 0
     checkLogContains "${TESTNAME} / check no service restarts in c2" "Restarting services in ${WORKDIR}/c2/docker-compose.yml" 1
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains start message" "composeupdater/update start" 1
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains done message" "composeupdater/update done" 1
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains pulled message" "composeupdater/update/composition/service/pulled {\"composeFile\":\"${WORKDIR}/c2/docker-compose.yml\",\"services\":\[{\"name\":\"test21\",\"image\":\"watcher-test-2\"}\]}" 1
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains restarting message" "composeupdater/update/composition/restart/start {\"composeFile\":\"${WORKDIR}/c2/docker-compose.yml\"" 1
+    checkMqttLogContains "${TESTNAME} / check mqtt log contains restart complete message" "composeupdater/update/composition/restart/done {\"composeFile\":\"${WORKDIR}/c2/docker-compose.yml\"" 1
 }
 
 echo "Working directory: ${WORKDIR}"
@@ -111,6 +146,8 @@ checkDocker
 rm -rf ${WORKDIR}
 mkdir -p ${WORKDIR} ${WORKDIR}/c1 ${WORKDIR}/c2 ${WORKDIR}/src
 cp ./test.Dockerfile ${WORKDIR}/Dockerfile
+cp ./mosquitto.conf ${WORKDIR}
+cp ./mqpass ${WORKDIR}
 PWD=$(echo ${WORKDIR} | sed 's_/_\\/_g')
 cat ./c1.yaml | sed "s/\${PWD}/${PWD}/g" > ${WORKDIR}/c1/compose1.yaml
 cat ./c2.yaml | sed "s/\${PWD}/${PWD}/g" > ${WORKDIR}/c2/docker-compose.yml
@@ -119,6 +156,9 @@ prepareBin
 echo "Building watcher-test..."
 docker build -q --no-cache -t watcher-test-1 ${WORKDIR}
 docker build -q --no-cache -t watcher-test-2 ${WORKDIR}
+
+echo "Starting MQTT broker..."
+docker run --rm -p 1883:1883 --name compose-test-mqtt -v ${WORKDIR}/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro -v ${WORKDIR}/mqpass:/mosquitto/config/mqpass:ro -d eclipse-mosquitto:latest
 
 echo "Starting composition 1..."
 docker compose -f ${WORKDIR}/c1/compose1.yaml up -d --quiet-pull
@@ -132,6 +172,7 @@ testShouldFindUpdateC1
 testShouldFindUpdateC2
 
 echo "Cleaning up..."
+docker stop compose-test-mqtt
 docker compose -f ${WORKDIR}/c1/compose1.yaml down
 docker compose -f ${WORKDIR}/c2/docker-compose.yml down
 rm -rf ${WORKDIR}

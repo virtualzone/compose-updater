@@ -43,6 +43,13 @@ jobs:
           virtualzone/compose-updater:latest
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache-new
+    - name: Docker Hub Description
+      uses: peter-evans/dockerhub-description@v2
+      with:
+        username: virtualzone
+        password: ${{ secrets.CI_REGISTRY_PASSWORD }}
+        repository: virtualzone/compose-updater
+        readme-filepath: ./README.md
     - name: Create Release
       uses: actions/create-release@v1
       env:

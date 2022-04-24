@@ -10,15 +10,20 @@ import (
 
 // Settings holds the program runtime configuration
 type Settings struct {
-	Cleanup       bool
-	Dry           bool
-	Help          bool
-	Interval      int64
-	Once          bool
-	PrintSettings bool
-	UpdateLog     string
+	Cleanup         bool
+	Dry             bool
+	Help            bool
+	Interval        int64
+	Once            bool
+	PrintSettings   bool
+	UpdateLog       string
+	Build           bool
+	MqttBroker      string
+	MqttClientID    string
+	MqttTopicPrefix string
+	MqttUsername    string
+	MqttPassword    string
 	//CompleteStop  bool
-	Build bool
 }
 
 var GlobalSettings *Settings = nil
@@ -34,6 +39,11 @@ func ReadSettings() {
 	s.stringFlagEnv(&s.UpdateLog, "updateLog", "UPDATE_LOG", "", "update log file")
 	//s.boolFlagEnv(&s.CompleteStop, "completeStop", "COMPLETE_STOP", false, "Restart all services in docker-compose.yml (even unmanaged) after a new image is pulled")
 	s.boolFlagEnv(&s.Build, "build", "BUILD", false, "Rebuild images of services with 'build' definition")
+	s.stringFlagEnv(&s.MqttBroker, "mqttBroker", "MQTT_BROKER", "", "MQTT Broker address (i.e. tcp://127.0.0.1:1883)")
+	s.stringFlagEnv(&s.MqttClientID, "mqttClientId", "MQTT_CLIENT_ID", "composeupdater", "MQTT Client ID")
+	s.stringFlagEnv(&s.MqttTopicPrefix, "mqttTopicPrefix", "MQTT_TOPIC_PREFIX", "composeupdater", "MQTT Topic Prefix")
+	s.stringFlagEnv(&s.MqttUsername, "mqttUsername", "MQTT_USERNAME", "", "MQTT Username")
+	s.stringFlagEnv(&s.MqttPassword, "mqttPassword", "MQTT_PASSWORD", "", "MQTT Password")
 	flag.Parse()
 	GlobalSettings = s
 }
@@ -71,5 +81,9 @@ func (settings *Settings) Print() {
 	log.Printf("    printSettings ... %t\n", settings.PrintSettings)
 	//log.Printf("    completeStop .... %t\n", settings.CompleteStop)
 	log.Printf("    build ........... %t\n", settings.Build)
-	log.Printf("    updateLog ....... %s\n", settings.UpdateLog)
+	log.Printf("    mqttBroker ...... %s\n", settings.MqttBroker)
+	log.Printf("    mqttClientId .... %s\n", settings.MqttClientID)
+	log.Printf("    mqttTopicPrefix . %s\n", settings.MqttTopicPrefix)
+	log.Printf("    mqttUsername .... %s\n", settings.MqttUsername)
+	log.Printf("    mqttPassword .... %s\n", "(hidden)")
 }
