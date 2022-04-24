@@ -79,7 +79,7 @@ MQTT_USERNAME | -mqttUsername | '' | MQTT Username
 MQTT_PASSWORD | -mqttPassword | '' | MQTT Password
 
 ## Connecting an MQTT Broker
-You can connect Compose Updater to an MQTT Broker (such as Eclispe Mosquitto or HiveMQ). This way, the actions of each run (i.e. image pulls, composition restarts) are published to an MQTT topic. You can use these informations to send push notifications using a solution like [mqttwarn](https://github.com/jpmens/mqttwarn).
+You can connect Compose Updater to an MQTT Broker (such as Eclispe Mosquitto or HiveMQ). This way, the actions of each run (i.e. image pulls, composition restarts) are published to an MQTT topic. You can use these informations to send push notifications using a solution like [mqttwarn](https://github.com/jpmens/mqttwarn) or [Home Assistant](https://www.home-assistant.io).
 
 To connect to an MQTT broker, specify the required connection parameters in the settings (see above).
 
@@ -95,6 +95,24 @@ update/composition/restart/start | On restarting a composition | ```{"composeFil
 update/composition/restart/done | On finished restarting a composition | ```{"composeFile": "/path/to/docker-compose.yml", "services":[{"name": "service1", "image": "image:tag"}]}```
 update/composition/service/built | On service's image built | ```{"composeFile": "/path/to/docker-compose.yml", "services":[{"name": "service1", "image": "image:tag"}]}```
 update/composition/service/pulled | On service's image pulled | ```{"composeFile": "/path/to/docker-compose.yml", "services":[{"name": "service1", "image": "image:tag"}]}```
+
+### Push notification example
+The following [Home Assistant](https://www.home-assistant.io) configuration sends a message via Telegram whenever a Docker composition has been restarted after updating at least one image:
+
+```json
+automation:
+  - alias: "Docker Compose Update"
+    trigger:
+      - platform: mqtt
+        topic: "composeupdater/update/composition/restart/done"
+        value_template: "{{ value_json.composeFile }}"
+    action:
+      - service: notify.telegram_bot
+        data:
+          message: "Docker images updated: {{ trigger.payload_json.composeFile }}"
+```
+
+Read more about how to set up the [MQTT](https://www.home-assistant.io/integrations/mqtt/) and [Telegram](https://www.home-assistant.io/integrations/telegram/) integrations in Home Assistant.
 
 ## License
 GNU General Public License v3.0
