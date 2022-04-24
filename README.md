@@ -19,7 +19,7 @@ Currently, Compose Updater doesn't help you when your're using image tags that w
 ### 1. Prepare your services
 You'll need to add two labels to the services you want to watch:
 
-```
+```yaml
 version: '3'
 services:
   web:
