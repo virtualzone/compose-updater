@@ -99,7 +99,7 @@ update/composition/service/pulled | On service's image pulled | ```{"composeFile
 ### Push notification example
 The following [Home Assistant](https://www.home-assistant.io) configuration sends a message via Telegram whenever a Docker composition has been restarted after updating at least one image:
 
-```json
+```yaml
 automation:
   - alias: "Docker Compose Update"
     trigger:
