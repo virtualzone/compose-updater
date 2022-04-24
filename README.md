@@ -36,7 +36,7 @@ services:
 ### 2. Run Compose Updater
 Run Docker Compose Watcher using compose:
 
-```
+```yaml
 version: '3'
 services:
   watcher:
