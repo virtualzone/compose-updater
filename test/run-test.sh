@@ -33,9 +33,9 @@ function checkMqttLogContains() {
 function runComposeUpdateAndLog() {
     sh -c "docker exec compose-test-mqtt mosquitto_sub -h 127.0.0.1 -u compose-updater -P ${MQTT_PASS} -t 'composeupdater/#' -v" &> ${WORKDIR}/mqtt.log &
     sleep 1
-    ONCE=1 PRINT_SETTINGS=1 MQTT_BROKER=tcp://127.0.0.1:1883 MQTT_USERNAME=compose-updater MQTT_PASSWORD=${MQTT_PASS} ${WORKDIR}/docker-compose-watcher &> ${WORKDIR}/test.log
+    ONCE=1 PRINT_SETTINGS=1 MQTT_BROKER=tcp://host.docker.internal:1883 MQTT_USERNAME=compose-updater MQTT_PASSWORD=${MQTT_PASS} ${WORKDIR}/docker-compose-watcher &> ${WORKDIR}/test.log
     sleep 1
-    kill $(ps | grep "docker exec compose-test-mqtt mosquitto_sub" | grep -v "grep" | cut -d' ' -f 1)
+    kill $(ps | grep "docker exec compose-test-mqtt mosquitto_sub" | grep -v "grep" | sed -e 's/^[[:space:]]*//' | cut -d' ' -f 1)
     echo "------------ Compose Updater Log ------------"
     cat ${WORKDIR}/test.log
     echo "----------------- MQTT Log ------------------"
@@ -148,6 +148,7 @@ mkdir -p ${WORKDIR} ${WORKDIR}/c1 ${WORKDIR}/c2 ${WORKDIR}/src
 cp ./test.Dockerfile ${WORKDIR}/Dockerfile
 cp ./mosquitto.conf ${WORKDIR}
 cp ./mqpass ${WORKDIR}
+cp ./mqtt.Dockerfile ${WORKDIR}
 PWD=$(echo ${WORKDIR} | sed 's_/_\\/_g')
 cat ./c1.yaml | sed "s/\${PWD}/${PWD}/g" > ${WORKDIR}/c1/compose1.yaml
 cat ./c2.yaml | sed "s/\${PWD}/${PWD}/g" > ${WORKDIR}/c2/docker-compose.yml
@@ -158,7 +159,8 @@ docker build -q --no-cache -t watcher-test-1 ${WORKDIR}
 docker build -q --no-cache -t watcher-test-2 ${WORKDIR}
 
 echo "Starting MQTT broker..."
-docker run --rm -p 1883:1883 --name compose-test-mqtt -v ${WORKDIR}/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro -v ${WORKDIR}/mqpass:/mosquitto/config/mqpass:ro -d eclipse-mosquitto:latest
+docker build -t compose-test-mqtt -f ${WORKDIR}/mqtt.Dockerfile ${WORKDIR}
+docker run --rm -p 1883:1883 --name compose-test-mqtt -d compose-test-mqtt
 
 echo "Starting composition 1..."
 docker compose -f ${WORKDIR}/c1/compose1.yaml up -d --quiet-pull

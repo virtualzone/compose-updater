@@ -29,4 +29,5 @@ RUN \
 WORKDIR /test
 ADD ./test/ /test/
 COPY --from=builder /go/src/app/main /test/docker-compose-watcher
+EXPOSE 1883
 CMD ["/test/run-test.sh"]
