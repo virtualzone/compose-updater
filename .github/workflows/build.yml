@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set version env
       run: echo "CI_VERSION=$(cat src/version.go | grep 'BuildVersion =' | cut -d'"' -f2 | awk NF)" >> $GITHUB_ENV
     - name: Set up QEMU
