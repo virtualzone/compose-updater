@@ -1,4 +1,4 @@
 package main
 
 // BuildVersion is the version
-const BuildVersion = "2.3.1"
+const BuildVersion = "2.4.0"
