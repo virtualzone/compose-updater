@@ -34,4 +34,4 @@ RUN \
     curl -SLf https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-${DOWNLOAD_ARCH} -o /usr/local/lib/docker/cli-plugins/docker-compose && \
     chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 COPY --from=builder /go/src/app/main /usr/local/bin/docker-compose-watcher
-CMD ["docker-compose-watcher", "-once=0", "-printSettings"]
+CMD ["docker-compose-watcher", "-printSettings"]
