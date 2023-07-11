@@ -60,7 +60,10 @@ func (settings *Settings) int64FlagEnv(p *int64, name string, env string, value 
 	flag.Int64Var(p, name, value, usage+" (env "+env+")")
 	val := os.Getenv(env)
 	if val != "" {
-		i, _ := strconv.ParseInt(val, 10, 0)
+		i, err := strconv.ParseInt(val, 10, 0)
+		if err != nil {
+			log.Fatal(err)
+		}
 		*p = i
 	}
 }
