@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 )
 
 // Settings holds the program runtime configuration
@@ -51,8 +50,12 @@ func ReadSettings() {
 func (settings *Settings) boolFlagEnv(p *bool, name string, env string, value bool, usage string) {
 	flag.BoolVar(p, name, value, usage+" (env "+env+")")
 	val := os.Getenv(env)
-	if (val != "") && (val != "0") && (strings.ToLower(val) != "false") {
-		*p = true
+	if val != "" {
+		b, err := strconv.ParseBool(val)
+		if err != nil {
+			log.Fatal(err)
+		}
+		*p = b
 	}
 }
 
