@@ -33,7 +33,7 @@ func ReadSettings() {
 	s.boolFlagEnv(&s.Dry, "dry", "DRY", false, "dry run: check and pull, but don't restart")
 	s.boolFlagEnv(&s.Help, "help", "HELP", false, "print usage instructions")
 	s.int64FlagEnv(&s.Interval, "interval", "INTERVAL", 60, "interval in minutes between runs")
-	s.boolFlagEnv(&s.Once, "once", "ONCE", true, "run once and exit, do not run in background")
+	s.boolFlagEnv(&s.Once, "once", "ONCE", false, "run once and exit, do not run in background")
 	s.boolFlagEnv(&s.PrintSettings, "printSettings", "PRINT_SETTINGS", false, "print used settings")
 	s.stringFlagEnv(&s.UpdateLog, "updateLog", "UPDATE_LOG", "", "update log file")
 	//s.boolFlagEnv(&s.CompleteStop, "completeStop", "COMPLETE_STOP", false, "Restart all services in docker-compose.yml (even unmanaged) after a new image is pulled")
