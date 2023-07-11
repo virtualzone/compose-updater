@@ -58,16 +58,18 @@ func (settings *Settings) boolFlagEnv(p *bool, name string, env string, value bo
 
 func (settings *Settings) int64FlagEnv(p *int64, name string, env string, value int64, usage string) {
 	flag.Int64Var(p, name, value, usage+" (env "+env+")")
-	if os.Getenv(env) != "" {
-		i, _ := strconv.ParseInt(os.Getenv(env), 10, 0)
+	val := os.Getenv(env)
+	if val != "" {
+		i, _ := strconv.ParseInt(val, 10, 0)
 		*p = i
 	}
 }
 
 func (settings *Settings) stringFlagEnv(p *string, name string, env string, value string, usage string) {
 	flag.StringVar(p, name, value, usage+" (env "+env+")")
-	if os.Getenv(env) != "" {
-		*p = os.Getenv(env)
+	val := os.Getenv(env)
+	if val != "" {
+		*p = val
 	}
 }
 
